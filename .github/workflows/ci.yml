@@ -6,10 +6,7 @@ on:
       os:
         required: true
         type: string
-      c_compiler:
-        required: true
-        type: string
-      cpp_compiler:
+      compiler:
         required: true
         type: string
 
@@ -23,7 +20,7 @@ jobs:
       - name: Setup C++ compiler
         uses: aminya/setup-cpp@v1
         with:
-          compiler: ${{ inputs.compier }}
+          compiler: ${{ inputs.compiler }}
           cmake: true
           ninja: true
           conan: true
