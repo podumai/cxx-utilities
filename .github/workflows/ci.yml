@@ -35,4 +35,5 @@ jobs:
       
       - name: CMake test phase
         run: ctest --test-dir ./build/tests/
+        run: source ./build/Release/generators/deactivate_conanbuild.sh
       - run: echo "Job status is ${{ job.status }}"
