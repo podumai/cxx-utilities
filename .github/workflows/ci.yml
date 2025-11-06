@@ -1,0 +1,38 @@
+name: "[CI/CMake] Project configuration, build and testing"
+run-name: ${{ github.actor }} has done ${{ github.event_name }} to master branch
+on:
+  workflow_call:
+    inputs:
+      os:
+        required: true
+        type: string
+      c_compiler:
+        required: true
+        type: string
+      cpp_compiler:
+        required: true
+        type: string
+
+jobs:
+  cmake:
+    runs-on: ${{ inputs.os }}
+    steps:
+      - run: echo "The job was automatically triggered by a ${{ github.event_name }}"
+      - run: echo "This job is running on ${{ runner.os }}"
+
+      - name: Setup C++ compiler
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: ${{ inputs.compier }}
+          cmake: true
+          ninja: true
+          conan: true
+
+      - uses: actions/checkout@v4
+      - run: echo "The ${{ github.repository }} repository has been cloned to runner"
+      - run: echo "Running project build shell script"
+      - run: chmod u+x ./build.sh && ./build.sh
+      
+      - name: CMake test phase
+        run: ctest --test-dir ./build/tests/
+      - run: echo "Job status is ${{ job.status }}"
