@@ -9,6 +9,37 @@ import (
 	"time"
 )
 
+func MakeSampleFile(filename string, entries int, generator *rand.Rand) error {
+	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		file.Close()
+		if err != nil {
+			os.Remove(file.Name())
+		}
+	}()
+	writer := bufio.NewWriter(file)
+	for entries > 0 {
+		entries--
+		randomIp4 := fmt.Sprintf(
+			"%d.%d.%d.%d",
+			generator.Intn(256),
+			generator.Intn(256),
+			generator.Intn(256),
+			generator.Intn(256),
+		)
+		row := fmt.Sprintf("%s\t%d\t%d\n", randomIp4, generator.Intn(10), generator.Intn(10))
+		_, err = writer.WriteString(row)
+		if err != nil {
+			return err
+		}
+	}
+	writer.Flush()
+	return nil
+}
+
 func main() {
 	if len(os.Args) < 2 {
 		fmt.Fprintln(os.Stderr, "usage: file-gen n1 [... <nN>]")
@@ -23,36 +54,9 @@ func main() {
 		}
 		fmt.Printf("[%d] Generating ip_filter_test%d.tsv with %d rows\n", i, i, t)
 		filename := fmt.Sprintf("ip_filter_test%d.tsv", i)
-		file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)
+		err = MakeSampleFile(filename, t, randomGenerator)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "[ERROR] message:", err)
-			continue
+			fmt.Fprintln(os.Stderr, "[ERROR] message: %s", err.Error())
 		}
-		writer := bufio.NewWriter(file)
-		for t > 0 {
-			t--
-			randomIp4 := fmt.Sprintf(
-				"%d.%d.%d.%d",
-				randomGenerator.Intn(256),
-				randomGenerator.Intn(256),
-				randomGenerator.Intn(256),
-				randomGenerator.Intn(256),
-			)
-			row := fmt.Sprintf("%s\t%d\t%d\n", randomIp4, randomGenerator.Intn(10), randomGenerator.Intn(10))
-			_, err = writer.WriteString(row)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "[ERROR] message:", err)
-				fmt.Fprintln(os.Stderr, "Removing file:", filename)
-				file.Close()
-				err = os.Remove(filename)
-				if err != nil {
-					fmt.Fprintln(os.Stderr, "[ERROR] message:", err)
-					fmt.Fprintln(os.Stderr, "Terminating...")
-					os.Exit(1)
-				}
-			}
-		}
-		writer.Flush()
-		file.Close()
 	}
 }
