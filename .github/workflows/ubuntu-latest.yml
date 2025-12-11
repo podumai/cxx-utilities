@@ -13,4 +13,3 @@ jobs:
     with:
       os: ubuntu-latest
       compiler: gcc
-      conan_profile: conan-release

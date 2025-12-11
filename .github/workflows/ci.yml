@@ -36,12 +36,12 @@ jobs:
       - run: conan install . -s:a build_type=Release -s:a compiler.cppstd=23 --build=missing
 
       - name: CMake configure phase
-        run: cmake --preset ${{ inputs.conan_profile }}
+        run: cmake --preset conan-release
 
       - name: CMake build phase
-        run: cmake --build --preset ${{ inputs.conan_profile }}
+        run: cmake --build --preset conan-release
       
       - name: CMake test phase
-        run: ctest --preset ${{ inputs.conan_profile }}
+        run: ctest --preset conan-release
 
       - run: echo "Job status is ${{ job.status }}"

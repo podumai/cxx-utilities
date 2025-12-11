@@ -13,4 +13,3 @@ jobs:
     with:
       os: macos-latest
       compiler: apple-clang
-      conan_profile: conan-release
