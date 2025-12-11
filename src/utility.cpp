@@ -32,17 +32,17 @@ enum BytePosition : unsigned char { kUnknown = 0, kFirst = 0, kSecond = 1, kThir
   return result;
 }
 
-[[nodiscard]] auto ParseIp(std::string_view ip) noexcept -> ParsedIpType {
-  auto parsed_ip = ParsedIpType{};
+[[nodiscard]] auto ParseIp(std::string_view ip_address) noexcept -> ParsedIpType {
+  auto parsed_ip_address = ParsedIpType{};
   sscanf(
-    ip.data(),
+    ip_address.data(),
     "%u.%u.%u.%u",
-    &std::get<BytePosition::kFirst>(parsed_ip),
-    &std::get<BytePosition::kSecond>(parsed_ip),
-    &std::get<BytePosition::kThird>(parsed_ip),
-    &std::get<BytePosition::kFourth>(parsed_ip)
+    &std::get<BytePosition::kFirst>(parsed_ip_address),
+    &std::get<BytePosition::kSecond>(parsed_ip_address),
+    &std::get<BytePosition::kThird>(parsed_ip_address),
+    &std::get<BytePosition::kFourth>(parsed_ip_address)
   );
-  return parsed_ip;
+  return parsed_ip_address;
 }
 
 inline namespace __details {
@@ -63,36 +63,37 @@ enum struct FilterArgs : unsigned char {
   kTask3 = 46
 };
 
-auto Task1(const std::vector<ParsedIpType>& ips) -> void {
+auto Task1(const std::vector<ParsedIpType>& ip_addresses) -> void {
   std::println("[Task-1] Sorted range:");
-  DisplayRange(ips);
+  DisplayRange(ip_addresses);
 }
 
-auto Task2(const std::vector<ParsedIpType>& ips) -> void {
-  auto filtered_range{ips | std::views::filter([] [[nodiscard]] (const auto& ip) noexcept -> bool {
-                        return std::get<BytePosition::kFirst>(ip) == std::to_underlying(FilterArgs::kTask1);
-                      })};
+auto Task2(const std::vector<ParsedIpType>& ip_addresses) -> void {
+  auto filtered_range = ip_addresses | std::views::filter([] [[nodiscard]] (const auto& ip_address) noexcept -> bool {
+                          return std::get<BytePosition::kFirst>(ip_address) == std::to_underlying(FilterArgs::kTask1);
+                        });
   std::println("[Task-2] Sorted range (1, any, any, any):");
   DisplayRange(filtered_range);
 }
 
-auto Task3(const std::vector<ParsedIpType>& ips) -> void {
-  auto filtered_range{ips | std::views::filter([] [[nodiscard]] (const auto& ip) noexcept -> bool {
-                        return std::get<BytePosition::kFirst>(ip) == std::to_underlying(FilterArgs::kTask2FirstByte) &&
-                               std::get<BytePosition::kSecond>(ip) == std::to_underlying(FilterArgs::kTask2SecondByte);
-                      })};
+auto Task3(const std::vector<ParsedIpType>& ip_addresses) -> void {
+  auto filtered_range =
+    ip_addresses | std::views::filter([] [[nodiscard]] (const auto& ip_address) noexcept -> bool {
+      return std::get<BytePosition::kFirst>(ip_address) == std::to_underlying(FilterArgs::kTask2FirstByte) &&
+             std::get<BytePosition::kSecond>(ip_address) == std::to_underlying(FilterArgs::kTask2SecondByte);
+    });
   std::println("[Task-3] Sorted range (46, 70, any, any):");
   DisplayRange(filtered_range);
 }
 
-auto Task4(const std::vector<ParsedIpType>& ips) -> void {
-  auto filtered_range{ips | std::views::filter([] [[nodiscard]] (const auto& ip) noexcept -> bool {
-                        constexpr int kFilterArg{std::to_underlying(FilterArgs::kTask3)};
-                        return std::get<BytePosition::kFirst>(ip) == kFilterArg ||
-                               std::get<BytePosition::kSecond>(ip) == kFilterArg ||
-                               std::get<BytePosition::kThird>(ip) == kFilterArg ||
-                               std::get<BytePosition::kFourth>(ip) == kFilterArg;
-                      })};
+auto Task4(const std::vector<ParsedIpType>& ip_addresses) -> void {
+  auto filtered_range = ip_addresses | std::views::filter([] [[nodiscard]] (const auto& ip_address) noexcept -> bool {
+                          constexpr auto kFilterArg = std::to_underlying(FilterArgs::kTask3);
+                          return std::get<BytePosition::kFirst>(ip_address) == kFilterArg ||
+                                 std::get<BytePosition::kSecond>(ip_address) == kFilterArg ||
+                                 std::get<BytePosition::kThird>(ip_address) == kFilterArg ||
+                                 std::get<BytePosition::kFourth>(ip_address) == kFilterArg;
+                        });
   std::println("[Task-4] Sorted range with any byte equal to 46:");
   DisplayRange(filtered_range);
 }

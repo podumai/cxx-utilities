@@ -9,8 +9,3 @@ target_sources(
   PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/utility.cpp"
 )
-target_compile_features(
-  Lab2Utility
-  PRIVATE
-  cxx_std_23
-)

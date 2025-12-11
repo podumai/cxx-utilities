@@ -15,19 +15,19 @@ auto main(int argc, char* argv[]) -> int {
     return 1;
   }
   try {
-    std::ifstream ips{argv[1]};
+    auto ips = std::ifstream{argv[1]};
     if (!ips.is_open()) {
       std::println(stderr, "[ERROR] unable to open file: ip_filter.tsv");
       return 1;
     }
-    std::vector<lab::ParsedIpType> ip_adresses;
-    for (std::string buffer; std::getline(ips, buffer);) {
-      auto parsed_row{lab::utility::ParseRow(buffer)};
+    auto ip_adresses = std::vector<lab::ParsedIpType>{};
+    for (auto buffer = std::string{}; std::getline(ips, buffer);) {
+      auto parsed_row = lab::utility::ParseRow(buffer);
       if (!parsed_row.has_value()) {
         std::println(stderr, "[ERROR] Parsing row failed: {}", buffer);
         continue;
       }
-      auto parsed_ip{lab::utility::ParseIp(parsed_row->front())};
+      auto parsed_ip = lab::utility::ParseIp(parsed_row->front());
       ip_adresses.push_back(parsed_ip);
     }
 
@@ -38,6 +38,9 @@ auto main(int argc, char* argv[]) -> int {
     lab::utility::Task4(ip_adresses);
   } catch (const std::exception& error) {
     std::println(stderr, "[ERROR] message: {}", error.what());
+    return 1;
+  } catch (...) {
+    std::println(stderr, "[ERROR] Unknown exception type.");
     return 1;
   }
   return 0;
