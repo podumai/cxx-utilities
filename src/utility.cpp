@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdio>
+#include <format>
 #include <functional>
 #include <print>
 #include <ranges>
@@ -11,17 +12,17 @@ namespace lab::utility {
 enum BytePosition : unsigned char { kUnknown = 0, kFirst = 0, kSecond = 1, kThird = 2, kFourth = 3 };
 
 [[nodiscard]] auto ParseRow(std::string_view row) -> std::optional<std::vector<std::string_view>> {
-  if (row.empty()) {
+  if (row.empty()) [[unlikely]] {
     return std::nullopt;
   }
 
   using SizeType = typename std::string_view::size_type;
 
-  std::vector<std::string_view> result;
-  SizeType current_index{};
+  auto result = std::vector<std::string_view>{};
+  auto current_index = SizeType{};
   while (current_index != std::string_view::npos) {
-    const SizeType end{row.find('\t', current_index)};
-    const std::string_view field{row.substr(current_index, end - current_index)};
+    const auto end = row.find('\t', current_index);
+    const auto field = row.substr(current_index, end - current_index);
     result.push_back(field);
     current_index = end != std::string_view::npos ? end + 1 : end;
   }
@@ -32,9 +33,9 @@ enum BytePosition : unsigned char { kUnknown = 0, kFirst = 0, kSecond = 1, kThir
 }
 
 [[nodiscard]] auto ParseIp(std::string_view ip) noexcept -> ParsedIpType {
-  ParsedIpType parsed_ip;
+  auto parsed_ip = ParsedIpType{};
   sscanf(
-    ip.data(),  //
+    ip.data(),
     "%u.%u.%u.%u",
     &std::get<BytePosition::kFirst>(parsed_ip),
     &std::get<BytePosition::kSecond>(parsed_ip),
@@ -97,3 +98,21 @@ auto Task4(const std::vector<ParsedIpType>& ips) -> void {
 }
 
 }  // namespace lab::utility
+
+namespace std {
+
+template<>
+struct formatter<lab::ParsedIpType, char> : public formatter<std::string> {
+  [[nodiscard]] auto format(const lab::ParsedIpType& ip_address, std::format_context& context) const {
+    auto ip_str = std::format(
+      "{}.{}.{}.{}",
+      std::get<lab::utility::BytePosition::kFirst>(ip_address),
+      std::get<lab::utility::BytePosition::kSecond>(ip_address),
+      std::get<lab::utility::BytePosition::kThird>(ip_address),
+      std::get<lab::utility::BytePosition::kFourth>(ip_address)
+    );
+    return std::formatter<std::string>::format(ip_str, context);
+  }
+};
+
+}  // namespace std
