@@ -13,3 +13,4 @@ jobs:
     with:
       os: windows-latest
       compiler: cl
+      conan_profile: conan-default
