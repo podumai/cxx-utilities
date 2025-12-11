@@ -9,9 +9,6 @@ on:
       compiler:
         required: true
         type: string
-      conan_profile:
-        required: true
-        type: string
 
 jobs:
   cmake:
