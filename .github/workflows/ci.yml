@@ -42,8 +42,7 @@ jobs:
       - run: conan install . \
              -s:a build_type=Release \
              -s:a compiler.cppstd=23 \
-             --build=missing \
-             -c tools.cmake.cmaketoolchain:generator=Ninja
+             --build=missing
 
       - name: CMake configure phase
         run: cmake --preset ${{ inputs.conan_configure_preset }}
