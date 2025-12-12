@@ -9,6 +9,15 @@ on:
       compiler:
         required: true
         type: string
+      conan_configure_preset:
+        required: true
+        type: string
+      conan_build_preset:
+        required: true
+        type: string
+      conan_test_preset:
+        required: true
+        type: string
 
 jobs:
   cmake:
@@ -33,12 +42,12 @@ jobs:
       - run: conan install . -s:a build_type=Release -s:a compiler.cppstd=23 --build=missing
 
       - name: CMake configure phase
-        run: cmake --preset conan-release
+        run: cmake --preset ${{ inputs.conan_configure_preset }}
 
       - name: CMake build phase
-        run: cmake --build --preset conan-release
+        run: cmake --build --preset ${{ inputs.conan_build_preset }}
       
       - name: CMake test phase
-        run: ctest --preset conan-release
+        run: ctest --preset ${{ inputs.conan_test_preset }}
 
       - run: echo "Job status is ${{ job.status }}"

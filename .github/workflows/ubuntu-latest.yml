@@ -13,3 +13,6 @@ jobs:
     with:
       os: ubuntu-latest
       compiler: gcc
+      conan_configure_preset: conan-release
+      conan_build_preset: conan-release
+      conan_test_preset: conan-release
