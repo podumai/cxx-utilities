@@ -48,8 +48,10 @@ enum BytePosition : unsigned char { kUnknown = 0, kFirst = 0, kSecond = 1, kThir
 inline namespace __details {
 
 auto DisplayRange(std::ranges::range auto&& range) -> void {
-  for (auto&& [index, value] : std::views::enumerate(std::forward<decltype(range)>(range))) {
-    std::println("[{}] {}", index, std::forward<decltype(value)>(value));
+  typename decltype(range)::size_type i{};
+  for (auto const& value : std::forward<decltype(range)>(range)) {
+    std::println("[{}] {}", i, value);
+    ++i;
   }
 }
 
