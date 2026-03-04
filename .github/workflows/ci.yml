@@ -1,53 +1,116 @@
-name: "[CI/CMake] Project configuration, build and testing"
-run-name: ${{ github.actor }} has done ${{ github.event_name }} to master branch
+name: CI
+
 on:
   workflow_call:
     inputs:
       os:
         required: true
         type: string
+      build_type:
+        required: true
+        type: string
+      configure_preset:
+        required: true
+        type: string
+      conan_preset:
+        required: true
+        type: string
       compiler:
-        required: true
-        type: string
-      conan_configure_preset:
-        required: true
-        type: string
-      conan_build_preset:
-        required: true
-        type: string
-      conan_test_preset:
         required: true
         type: string
 
 jobs:
-  cmake:
+  build:
     runs-on: ${{ inputs.os }}
     steps:
-      - run: echo "The job was automatically triggered by a ${{ github.event_name }}"
-      - run: echo "This job is running on ${{ runner.os }}"
+      - name: Cloning git repository
+        uses: actions/checkout@v4
 
-      - name: Setup C++ compiler
+      - name: Setup C++ infrastructure
         uses: aminya/setup-cpp@v1
         with:
           compiler: ${{ inputs.compiler }}
           cmake: true
-          ninja: true
           conan: true
       
-      - name: Conan2 configuration
-        run: conan profile detect --force
-
-      - uses: actions/checkout@v4
-      - run: echo "The ${{ github.repository }} repository has been cloned to runner"
-      - run: conan install . -s:a build_type=Release -s:a compiler.cppstd=23 --build=missing
-
-      - name: CMake configure phase
-        run: cmake --preset ${{ inputs.conan_configure_preset }}
-
-      - name: CMake build phase
-        run: cmake --build --preset ${{ inputs.conan_build_preset }}
+      - name: Build project
+        uses: ./.github/actions/build-project
+        with:
+          build_type: ${{ inputs.build_type }}
+          configure_preset: ${{ inputs.configure_preset }}
+          conan_preset: ${{ inputs.conan_preset }}
+  
+  test:
+    runs-on: ${{ inputs.os }}
+    needs:
+      - build
+    steps:
+      - name: Cloning git repository
+        uses: actions/checkout@v4
       
-      - name: CMake test phase
-        run: ctest --preset ${{ inputs.conan_test_preset }}
+      - name: Setup C++ dependencies
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: ${{ inputs.compiler }}
+          cmake: true
+          conan: true
+      
+      - name: Build project
+        uses: ./.github/actions/build-project
+        with:
+          build_type: ${{ inputs.build_type }}
+          configure_preset: ${{ inputs.configure_preset }}
+          conan_preset: ${{ inputs.conan_preset }}
+      
+      - name: Unit-testing
+        run: ctest --preset ${{ inputs.conan_preset }}
+  
+  save-artifact:
+    runs-on: ${{ inputs.os }}
+    needs:
+      - test
+    steps:
+      - name: Cloning git repository
+        uses: actions/checkout@v4
+      
+      - name: Make archive
+        run: tar -czf cxx-utilities-${{ runner.os }}.tar.gz --exclude=".git" --exclude=".github" ./*
 
-      - run: echo "Job status is ${{ job.status }}"
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-cxx-utilities-${{ runner.os }}
+          path: ./cxx-utilities-${{ runner.os }}.tar.gz
+          retention-days: 5
+          overwrite: true
+
+  release:
+    runs-on: ${{ inputs.os }}
+    permissions:
+      contents: write
+    needs:
+      - save-artifact
+    if: github.event_name == 'pull_request' && github.base_ref == 'master' && github.head_ref == 'dev' && github.event.pull_request.merged == true
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v4
+        
+      - name: Download archive
+        uses: actions/download-artifact@v4
+        with:
+          name: artifact-cxx-utilities-${{ runner.os }}
+          path: ./artifact
+      
+      - name: Read project version
+        id: version
+        run: |
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name:
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          files: ./artifact/containers-${{ runner.os }}.tar.gz
+          fail_on_unmatched_files: true
