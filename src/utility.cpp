@@ -7,6 +7,10 @@
 #include <tpu/utility.hpp>
 #include <utility>
 
+/**
+ * @namespace lab::utility
+ * @brief Namespace containing utility function for laboratory work
+ */
 namespace lab::utility {
 
 enum BytePosition : unsigned char { kUnknown = 0, kFirst = 0, kSecond = 1, kThird = 2, kFourth = 3 };
