@@ -29,7 +29,7 @@ runs:
   steps:
     - name: Install project dependencies
       shell: bash
-      run: conan install . --build=missing --profile=./profiles/${{ inputs.profile }}
+      run: conan install . --build=missing --profile:all=./profiles/${{ inputs.profile }}
 
     - name: CMake configuration phase
       shell: bash
