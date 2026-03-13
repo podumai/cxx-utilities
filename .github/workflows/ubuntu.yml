@@ -26,7 +26,6 @@ jobs:
       matrix:
         build_type: [ Release, Debug ]
         conan_preset: [ conan-release, conan-debug ]
-        compiler: llvm-21
         exclude:
           - build_type: Release
             conan_preset: conan-debug
@@ -38,4 +37,4 @@ jobs:
       build_type: ${{ matrix.build_type }}
       configure_preset: ${{ matrix.conan_preset }}
       conan_preset: ${{ matrix.conan_preset }}
-      compiler: ${{ matrix.compiler }}
+      compiler: llvm-21
