@@ -20,10 +20,13 @@ on:
         type: string
 
 jobs:
+
   build:
     runs-on: ${{ inputs.os }}
+    permissions:
+      contents: read
     steps:
-      - name: Cloning git repository
+      - name: Clone repository
         uses: actions/checkout@v4
 
       - name: Setup C++ infrastructure
@@ -42,10 +45,12 @@ jobs:
   
   test:
     runs-on: ${{ inputs.os }}
+    permissions:
+      contents: read
     needs:
       - build
     steps:
-      - name: Cloning git repository
+      - name: Clone repository
         uses: actions/checkout@v4
       
       - name: Setup C++ dependencies
@@ -67,50 +72,94 @@ jobs:
   
   save-artifact:
     runs-on: ${{ inputs.os }}
+    permissions:
+      contents: read
+      actions: write
     needs:
       - test
     steps:
-      - name: Cloning git repository
+      - name: Clone repository
         uses: actions/checkout@v4
-      
-      - name: Make archive
-        run: tar -czf cxx-utilities-${{ runner.os }}.tar.gz --exclude=".git" --exclude=".github" ./*
+
+      - name: Setup C++ dependencies
+        uses: aminya/setup-cpp@v1
+        with:
+          compiler: ${{ inputs.compiler }}
+          cmake: true
+          conan: true
+
+      - name: Setup environment variables for current profile
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "PROFILE=windows-x86_64-static" >> $GITHUB_ENV
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            echo "PROFILE=macos-arm64-static" >> $GITHUB_ENV
+          else
+            echo "PROFILE=linux-x86_64-static" >> $GITHUB_ENV
+          fi
+          ARTIFACT_NAME=$(echo "${{ runner.os }}-${{ runner.arch }}" | tr '[:upper:]' '[:lower:]')
+          echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
+
+      - name: Create release artifact
+        uses: ./.github/actions/make-release-artifact
+        with:
+          profile: ${{ env.PROFILE }}
+          configure_preset: ${{ inputs.configure_preset }}
+          conan_preset: ${{ inputs.conan_preset }}
+          artifact_name: ${{ env.ARTIFACT_NAME }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: artifact-cxx-utilities-${{ runner.os }}
-          path: ./cxx-utilities-${{ runner.os }}.tar.gz
+          path: ./${{ env.ARTIFACT_NAME }}.tar.gz
           retention-days: 5
           overwrite: true
 
   release:
-    runs-on: ${{ inputs.os }}
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     needs:
       - save-artifact
-    if: github.event_name == 'pull_request' && github.base_ref == 'master' && github.head_ref == 'dev' && github.event.pull_request.merged == true
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     steps:
       - name: Clone repository
         uses: actions/checkout@v4
-        
+        with:
+          fetch-depth: 0
+
       - name: Download archive
         uses: actions/download-artifact@v4
         with:
           name: artifact-cxx-utilities-${{ runner.os }}
           path: ./artifact
-      
-      - name: Read project version
-        id: version
+
+      - name: Detect version bump
+        id: bump
         run: |
-          VERSION=$(cat VERSION | tr -d '[:space:]')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-      
-      - name:
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
+          VERSION=${LAST_TAG#v}
+          MAJOR=$(echo $VERSION | cut -d. -f1)
+          MINOR=$(echo $VERSION | cut -d. -f2)
+          PATCH=$(echo $VERSION | cut -d. -f3)
+          
+          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'major') }}" == "true" ]]; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif [[ "${{ contains(github.event.pull_request.labels.*.name, 'feature') }}" == "true" ]]; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          else
+            PATCH=$((PATCH + 1))
+          fi
+          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
+
+      - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: v${{ steps.version.outputs.version }}
-          files: ./artifact/cxx-utilities-${{ runner.os }}.tar.gz
+          tag_name: v${{ steps.bump.outputs.new_version }}
+          files: ./artifact/*.tar.gz
           fail_on_unmatched_files: true

@@ -1,0 +1,44 @@
+name: Make release artifact
+description: Make release executable depending on profile and save artifact for release job
+
+inputs:
+  profile:
+    description: Conan profile for release build
+    type: string
+    required: true
+  configure_preset:
+    description: Configuration preset for Conan2
+    type: string
+    required: true
+  conan_preset:
+    description: Build preset for Conan2
+    type: string
+    required: true
+  artifact_name:
+    description: Final artifact name
+    type: string
+    required: true
+  output_path:
+    description: Destination to output final archive
+    type: string
+    required: false
+    default: .
+
+runs:
+  using: composite
+  steps:
+    - name: Install project dependencies
+      shell: bash
+      run: conan install . --build=missing --profile=./profiles/${{ inputs.profile }}
+
+    - name: CMake configuration phase
+      shell: bash
+      run: cmake --preset ${{ inputs.configure_preset }} -DCI_CD_RELEASE=ON
+
+    - name: CMake build phase
+      shell: bash
+      run: cmake --build --preset ${{ inputs.conan_preset }} --target App
+
+    - name: Make archive
+      shell: bash
+      run: tar -czf ${{inputs.output_path }}/${{ inputs.artifact_name }}.tar.gz ./build/bin/*
