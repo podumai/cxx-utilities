@@ -1,4 +1,4 @@
-name: ubuntu-latest
+name: ubuntu-24.04
 
 on:
   pull_request:
@@ -11,11 +11,13 @@ on:
       - master
     paths-ignore:
       - .github/**
+      - ./profiles/
   push:
     branches:
       - master
     paths-ignore:
       - .github/**
+      - ./profiles/
 
 jobs:
   ubuntu-build:
@@ -24,7 +26,7 @@ jobs:
       matrix:
         build_type: [ Release, Debug ]
         conan_preset: [ conan-release, conan-debug ]
-        compiler: [ gcc, llvm ]
+        compiler: llvm-21
         exclude:
           - build_type: Release
             conan_preset: conan-debug
@@ -32,7 +34,7 @@ jobs:
             conan_preset: conan-release
     uses: podumai/cxx-utilities/.github/workflows/ci.yml@master
     with:
-      os: ubuntu-latest
+      os: ubuntu-24.04
       build_type: ${{ matrix.build_type }}
       configure_preset: ${{ matrix.conan_preset }}
       conan_preset: ${{ matrix.conan_preset }}

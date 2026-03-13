@@ -1,4 +1,4 @@
-name: macOS
+name: macOS-26
 on:
   pull_request:
     types:
@@ -10,11 +10,13 @@ on:
       - master
     paths-ignore:
       - .github/**
+      - ./profiles/
   push:
     branches:
       - master
     paths-ignore:
       - .github/**
+      - ./profiles/
 
 jobs:
   macos-build:
@@ -30,8 +32,8 @@ jobs:
             conan_preset: conan-release
     uses: podumai/cxx-utilities/.github/workflows/ci.yml@master
     with:
-      os: macos-latest
+      os: macos-26
       build_type: ${{ matrix.build_type }}
       configure_preset: ${{ matrix.conan_preset }}
       conan_preset: ${{ matrix.conan_preset }}
-      compiler: apple-clang
+      compiler: apple-clang-17
