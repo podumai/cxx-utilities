@@ -35,6 +35,6 @@ jobs:
     with:
       os: windows-2025
       build_type: ${{ matrix.build_type }}
-      configure_preset: ${{ matrix.conan_preset }}
+      configure_preset: conan-default
       conan_preset: conan-default
       compiler: msvc-193
