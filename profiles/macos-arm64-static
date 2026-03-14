@@ -2,7 +2,7 @@
 os=Macos
 arch=armv8
 compiler=apple-clang
-compier.version=17
+compiler.version=17
 compiler.cppstd=23
 compiler.libcxx=libc++
 build_type=Release
