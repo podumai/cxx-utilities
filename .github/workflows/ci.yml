@@ -130,10 +130,20 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Create artifact name
+        run: |
+          if [[ "${{ startsWith(inputs.os, 'windows') }}" == "true" ]]; then
+            echo "ARTIFACT_NAME=Windows" >> $GITHUB_ENV
+          elif [[ "${{ startsWith(inputs.os, 'macos') }}" == "true" ]]; then
+            echo "ARTIFACT_NAME=macOS" >> $GITHUB_ENV
+          else
+            echo "ARTIFACT_NAME=Linux" >> $GITHUB_ENV
+          fi
+
       - name: Download archive
         uses: actions/download-artifact@v4
         with:
-          name: artifact-cxx-utilities-${{ runner.os }}
+          name: artifact-cxx-utilities-${{ env.ARTIFACT_NAME }}
           path: ./artifact
 
       - name: Detect version bump
@@ -145,16 +155,19 @@ jobs:
           MINOR=$(echo $VERSION | cut -d. -f2)
           PATCH=$(echo $VERSION | cut -d. -f3)
           
-          if [[ "${{ contains(github.event.pull_request.labels.*.name, 'major') }}" == "true" ]]; then
+          COMMIT_MSG=$(git log -1 --pretty=%B)
+          
+          if echo "$COMMIT_MSG" | grep -qi "major"; then
             MAJOR=$((MAJOR + 1))
             MINOR=0
             PATCH=0
-          elif [[ "${{ contains(github.event.pull_request.labels.*.name, 'feature') }}" == "true" ]]; then
+          elif echo "$COMMIT_MSG" | grep -qi "feature"; then
             MINOR=$((MINOR + 1))
             PATCH=0
           else
             PATCH=$((PATCH + 1))
           fi
+          
           NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
           echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
 
