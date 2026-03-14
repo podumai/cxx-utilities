@@ -41,4 +41,4 @@ runs:
 
     - name: Make archive
       shell: bash
-      run: tar -czf ${{inputs.output_path }}/${{ inputs.artifact_name }}.tar.gz ./build/bin/*
+      run: tar -czf ${{inputs.output_path }}/${{ inputs.artifact_name }}.tar.gz -C ./build/Release/bin .
