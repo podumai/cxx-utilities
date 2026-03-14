@@ -2,21 +2,19 @@ cmake_minimum_required(VERSION 3.30)
 
 find_package(Git QUIET)
 if(GIT_FOUND)
-    execute_process(
-            COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-            OUTPUT_VARIABLE GIT_TAG
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            ERROR_QUIET
-    )
+  execute_process(
+    COMMAND ${GIT_EXECUTABLE} describe --tags --abbrev=0
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_TAG
+    OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
 
-    if(GIT_TAG)
-        set(PROJECT_VERSION ${GIT_TAG})
-    endif()
+  if(GIT_TAG)
+    string(SUBSTRING ${GIT_TAG} 1 -1 PROJECT_VERSION)
+  endif()
 endif()
 
 if(NOT PROJECT_VERSION)
-    set(PROJECT_VERSION "1.0.0")
+  set(PROJECT_VERSION "1.0.0")
 endif()
 
 project(
@@ -31,19 +29,32 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 if(CI_CD_RELEASE)
   set(BUILD_SHARED_LIBS OFF)
-  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a" ".lib")
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang"
-     OR CMAKE_CXX_COMPILER_ID STREQUAL "AppleClang"
-     OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    add_compile_options(-mtune=generic -march=x86-64)
+
+  if(NOT APPLE)
     add_link_options(-static)
-  elseif(CMAKE_CXX_COMPILER_ID STREQ "MSVC")
-    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultithreadedDebug")
+  endif()
+
+  if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU|AppleClang")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64")
+      add_compile_options(-mtune=generic -march=x86-64)
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+      add_compile_options(-mtune=generic -march=armv8-a)
+    else()
+      message(
+        WARNING "[${PROJECT_NAME}] Unknown processor: ${CMAKE_SYSTEM_PROCESSOR}"
+      )
+    endif()
+  elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|amd64|AMD64")
+      add_compile_options(/arch:AVX2)
+    endif()
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "Multithreaded")
   else()
     message(
       FATAL_ERROR
-        "[${PROJECT_NAME}] Configuration for ${CMAKE_CXX_COMPILER_ID} missing.")
+        "[${PROJECT_NAME}] Unsupported compiler: ${CMAKE_CXX_COMPILER_ID}")
   endif()
+  set(CMAKE_FIND_LIBRARY_SUFFIXES ".a" ".lib")
 endif()
 
 if($ENV{DEV})
