@@ -40,6 +40,10 @@ enum BytePosition : unsigned char { kUnknown = 0, kFirst = 0, kSecond = 1, kThir
   return result;
 }
 
+/// @brief Function for parsing ip address and packing it in std::tuple.
+/// @param[in] ip_address String representation of ipv4 address.
+/// @return Parsed ip address packed as individual bytes in std::tuple.
+/// @throws None (no-throw guarantee).
 [[nodiscard]] auto ParseIp(std::string_view ip_address) noexcept -> ParsedIpType {
   auto parsed_ip_address = ParsedIpType{};
   sscanf(
