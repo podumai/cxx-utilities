@@ -1,0 +1,62 @@
+name: Version bump
+
+on:
+  pull_request:
+    types: [ closed ]
+    branches: [ master ]
+
+concurrency:
+  group: version-bump
+  cancel-in-progress: false
+
+jobs:
+  version-bump:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Clone repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: master
+          fetch-depth: 0
+
+      - name: Detect version
+        run: |
+          CURRENT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
+          VERSION=${CURRENT_TAG#v}
+          echo "MAJOR=$(echo $VERSION | cut -d. -f1)" >> $GITHUB_ENV
+          echo "MINOR=$(echo $VERSION | cut -d. -f2)" >> $GITHUB_ENV
+          echo "PATCH=$(echo $VERSION | cut -d. -f3)" >> $GITHUB_ENV
+
+      - name: Save commit messages
+        run: COMMITS=$(git log ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --pretty=format:"%s")
+
+      - name: Bump version
+        run: |
+          if echo "$COMMITS" | grep -qiE '^(feat|fix|refactor|chore)(\(.+\))?!:|^BREAKING CHANGE'; then
+            MAJOR=$((MAJOR + 1))
+            MINOR=0
+            PATCH=0
+          elif echo "$COMMITS" | grep -qiE '^feat(\(.+\))?:'; then
+            MINOR=$((MINOR + 1))
+            PATCH=0
+          elif echo "$COMMITS" | grep -qiE '^(fix|docs|refactor|perf|test|chore)(\(.+\))?:'; then
+            PATCH=$((PATCH + 1))
+          else
+            PATCH=$((PATCH + 1))
+          fi
+          
+          echo "NEW_VERSION=${MAJOR}.${MINOR}.${PATCH}" >> $GITHUB_ENV
+
+      - name: Update VERSION file
+        run: echo "${NEW_VERSION}" > VERSION
+
+      - name: Commit VERSION
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "chore: bump version [skip ci]"
+          git tag "v${{ env.NEW_VERSION }}"
+          git push origin master --follow-tags

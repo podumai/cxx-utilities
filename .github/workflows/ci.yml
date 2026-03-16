@@ -1,150 +1,263 @@
 name: CI/CD
 
+#on:
+#  workflow_call:
+#    inputs:
+#      os:
+#        required: true
+#        type: string
+#      build_type:
+#        required: true
+#        type: string
+#      configure_preset:
+#        required: true
+#        type: string
+#      conan_preset:
+#        required: true
+#        type: string
+#      compiler:
+#        required: true
+#        type: string
+
 on:
-  workflow_call:
-    inputs:
-      os:
-        required: true
-        type: string
-      build_type:
-        required: true
-        type: string
-      configure_preset:
-        required: true
-        type: string
-      conan_preset:
-        required: true
-        type: string
-      compiler:
-        required: true
-        type: string
+  pull_request:
+    types: [ opened, reopened, synchronize ]
+    branches: [ master ]
+  push:
+    tags: [ 'v*.*.*' ]
+
+env:
+  CPP_STD: 23
 
 jobs:
+  config:
+    runs-on: ubuntu-24.04
+    permissions: {}
+    outputs:
+      windows-image: ${{ steps.constants.outputs.windows-image }}
+      msvc-compiler: ${{ steps.constants.outputs.msvc-compiler }}
+      macos-image: ${{ steps.constants.outputs.macos-image }}
+      apple-clang-compiler: ${{ steps.constants.outputs.apple-clang-compiler }}
+      linux-image: ${{ steps.constants.outputs.linux-image }}
+      clang-compiler: ${{ steps.constants.outputs.clang-compiler }}
+    steps:
+      - name: Define constants
+        id: constants
+        run: |
+          echo "windows-image=windows-2025" >> $GITHUB_OUTPUT
+          echo "msvc-compiler=msvc-190" >> $GITHUB_OUTPUT
+          echo "macos-image=macos-26" >> $GITHUB_OUTPUT
+          echo "apple-clang-compiler=apple-clang-17" >> $GITHUB_OUTPUT
+          echo "linux-image=ubuntu-24.04" >> $GITHUB_OUTPUT
+          echo "clang-compiler=llvm-21" >> $GITHUB_OUTPUT
 
   build:
-    runs-on: ${{ inputs.os }}
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
+    needs: [ config ]
+    outputs:
+      os: ${{ steps.os.outputs.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ${{ needs.config.outputs.windows-image }}
+            compiler: ${{ needs.config.outputs.msvc-compiler }}
+          - os: ${{ needs.config.outputs.macos-image }}
+            compiler: ${{ needs.config.outputs.apple-clang-compiler }}
+          - os: ${{ needs.config.outputs.linux-image }}
+            compiler: ${{ needs.config.outputs.clang-compiler }}
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup C++ infrastructure
         uses: aminya/setup-cpp@v1
         with:
-          compiler: ${{ inputs.compiler }}
+          compiler: ${{ matrix.compiler }}
           cmake: true
+          ninja: true
           conan: true
-      
+
+      - name: Setup conan configuration
+        run: |
+          if [[ "${{ github.ref }}" != "refs/heads/master" ]]; then
+            if [[ "${{ runner.os }}" != "Windows" ]]; then
+              echo "CONAN_CONFIG_PRESET=conan-debug" >> $GITHUB_ENV
+            else
+              echo "CONAN_CONFIG_PRESET=conan-default" >> $GITHUB_ENV
+            fi
+            echo "CONAN_BUILD_PRESET=conan-debug" >> $GITHUB_ENV
+          else
+            if [[ "${{ runner.os }}" != "Windows" ]]; then
+              echo "CONAN_CONFIG_PRESET=conan-release" >> $GITNUB_ENV
+            else
+              echo "CONAN_CONFIG_PRESET=conan-default" >> $GITHUB_ENV
+            fi
+            echo "CONAN_BUILD_PRESET=conan-release" >> $GITHUB_ENV
+          fi
+
+      - name: Map runner configuration to profile
+        id: os
+        run: |
+          case ${{ runner.os }} in
+            "Windows") echo "OS=windows" >> $GITHUB_ENV;;
+            "macOS") echo "OS=macos" >> $GITHUB_ENV;;
+            "Linux") echo "OS=linux" >> $GITHUB_ENV;;
+          esac
+          
+          case ${{ runner.arch }} in
+            "X64") echo "ARCH=x86_64" >> $GITHUB_ENV;;
+            "ARM64") echo "ARCH=arm64" >> $GITHUB_ENV;;
+          esac
+
+      - name: Install project dependencies
+        run: |
+          if [[ "${{ github.ref }}" != "refs/heads/master" ]]; then
+            conan install . --build=missing -s:a build_type=Debug -s:a compiler.cppstd=23
+          else
+            conan install . --build=missing --profile:all=./profiles/${{ env.OS }}-${{ env.ARCH }}-static
+          fi
+
       - name: Build project
-        uses: ./.github/actions/build-project
+        run: |
+          if [[ "${{ github.ref }}" != "refs/heads/master" ]]; then
+            cmake --preset ${{ env.CONAN_CONFIG_PRESET }}
+            cmake --build --preset ${{ env.CONAN_BUILD_PRESET }}
+          else
+            cmake --preset ${{ env.CONAN_CONFIG_PRESET }} -DCI_CD_RELEASE=ON
+            cmake --build --preset ${{ env.CONAN_BUILD_PRESET }} --target App
+          fi
+
+      - name: Find conan config home
+        run: echo "CONAN_CONFIG_HOME=$(conan config home)" >> $GITHUB_ENV
+
+      - name: Generate access key
+        run: |
+          if [[ "${{ github.ref }}" != "refs/heads/master" ]]; then
+            echo "CACHE_KEY=conanfile.py" >> $GITHUB_ENV
+          else
+            echo "CACHE_KEY=conanfile.py,profiles/${{ env.OS }}-${{ env.ARCH }}-static" >> $GITHUB_ENV
+          fi
+
+      - name: Cache conan packages
+        uses: actions/cache@v5
         with:
-          build_type: ${{ inputs.build_type }}
-          configure_preset: ${{ inputs.configure_preset }}
-          conan_preset: ${{ inputs.conan_preset }}
-  
+          path: ${{ env.CONAN_CONFIG_HOME }}
+          key: conan-${{ runner.os }}
+
+      - name: Save build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact-${{ runner.os }}
+          path: |
+            build/
+            CMakeUserPresets.json
+          retention-days: 3
+          overwrite: true
+
   test:
-    runs-on: ${{ inputs.os }}
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read
-    needs:
-      - build
+    strategy:
+      matrix:
+        include:
+          - os: ${{ needs.config.outputs.windows-image }}
+            compiler: ${{ needs.config.outputs.msvc-compiler }}
+          - os: ${{ needs.config.outputs.macos-image }}
+            compiler: ${{ needs.config.outputs.apple-clang-compiler }}
+          - os: ${{ needs.config.outputs.linux-image }}
+            compiler: ${{ needs.config.outputs.clang-compiler }}
+    needs: [ config, build ]
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
-      
-      - name: Setup C++ dependencies
+        uses: actions/checkout@v6
+
+      - name: Setup C++ infrastructure
         uses: aminya/setup-cpp@v1
         with:
-          compiler: ${{ inputs.compiler }}
-          cmake: true
+          compiler: ${{ matrix.compiler }}
           conan: true
-      
-      - name: Build project
-        uses: ./.github/actions/build-project
+          cmake: true
+          ninja: true
+
+      - name: Restore build artifacts
+        uses: actions/download-artifact@v4
         with:
-          build_type: ${{ inputs.build_type }}
-          configure_preset: ${{ inputs.configure_preset }}
-          conan_preset: ${{ inputs.conan_preset }}
-      
-      - name: Unit-testing
-        run: ctest --preset ${{ inputs.conan_preset }}
-  
-  save-artifact:
-    runs-on: ${{ inputs.os }}
+          name: build-artifact-${{ runner.os }}
+
+      - name: Find conan generated test preset
+        run: |
+          if [[ "${{ github.ref }}" != "refs/heads/master" ]]; then
+            echo "CONAN_TEST_PRESET=conan-debug" >> $GITHUB_ENV
+          else
+            echo "CONAN_TEST_PRESET=conan-release" >> $GITHUB_ENV
+          fi
+
+      - name: Run unit-tests
+        run: ctest --preset ${{ env.CONAN_TEST_PRESET }}
+
+  archive:
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       actions: write
-    needs:
-      - test
-    if: inputs.build_type == 'Release'
+    needs: [ test ]
+    if: always() && needs.test.result == 'success' && startsWith(github.ref, 'refs/tags/')
     steps:
-      - name: Clone repository
-        uses: actions/checkout@v4
-
-      - name: Setup C++ dependencies
-        uses: aminya/setup-cpp@v1
+      - name: Download build artifacts (Windows)
+        uses: actions/download-artifact@v4
         with:
-          compiler: ${{ inputs.compiler }}
-          cmake: true
-          conan: true
+          name: build-artifact-Windows
+          path: Windows
 
-      - name: Setup environment variables for current profile
-        run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            echo "PROFILE=windows-x86_64-static" >> $GITHUB_ENV
-          elif [[ "${{ runner.os }}" == "macOS" ]]; then
-            echo "PROFILE=macos-arm64-static" >> $GITHUB_ENV
-          else
-            echo "PROFILE=linux-x86_64-static" >> $GITHUB_ENV
-          fi
-          ARTIFACT_NAME=$(echo "${{ runner.os }}-${{ runner.arch }}" | tr '[:upper:]' '[:lower:]')
-          echo "ARTIFACT_NAME=$ARTIFACT_NAME" >> $GITHUB_ENV
-
-      - name: Create release artifact
-        uses: ./.github/actions/make-release-artifact
+      - name: Download build artifacts (macOS)
+        uses: actions/download-artifact@v4
         with:
-          profile: ${{ env.PROFILE }}
-          configure_preset: ${{ inputs.configure_preset }}
-          conan_preset: ${{ inputs.conan_preset }}
-          artifact_name: ${{ env.ARTIFACT_NAME }}
+          name: build-artifact-macOS
+          path: macOS
+
+      - name: Download build artifacts (Linux)
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifact-Linux
+          path: Linux
+
+      - name: Make archive with release executable (Windows)
+        run: tar -czf windows-x86_64.tar.gz -C ./Windows/build/Release/bin .
+
+      - name: Make archive release executable (macOS)
+        run: tar -czf macos-arm64.tar.gz -C ./macOS/build/Release/bin .
+
+      - name: Make archive release executable (Linux)
+        run: tar -czf linux-x86_64.tar.gz -C ./Linux/build/Release/bin .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifact-cxx-utilities-${{ runner.os }}
-          path: ./${{ env.ARTIFACT_NAME }}.tar.gz
-          retention-days: 5
+          name: release-archives
+          path: ./*.tar.gz
+          retention-days: 1
           overwrite: true
 
   release:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-    needs:
-      - save-artifact
+    needs: [ archive ]
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     steps:
       - name: Clone repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Create artifact name
-        run: |
-          if [[ "${{ startsWith(inputs.os, 'windows') }}" == "true" ]]; then
-            echo "ARTIFACT_NAME=Windows" >> $GITHUB_ENV
-          elif [[ "${{ startsWith(inputs.os, 'macos') }}" == "true" ]]; then
-            echo "ARTIFACT_NAME=macOS" >> $GITHUB_ENV
-          else
-            echo "ARTIFACT_NAME=Linux" >> $GITHUB_ENV
-          fi
-
-      - name: Download archive
+      - name: Download archived executables
         uses: actions/download-artifact@v4
         with:
-          name: artifact-cxx-utilities-${{ env.ARTIFACT_NAME }}
-          path: ./artifact
+          name: release-archives
 
       - name: Detect version bump
         id: bump
@@ -175,5 +288,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.bump.outputs.new_version }}
-          files: ./artifact/*.tar.gz
+          files: ./*.tar.gz
           fail_on_unmatched_files: true
