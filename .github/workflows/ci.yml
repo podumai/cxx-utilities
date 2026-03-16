@@ -114,7 +114,7 @@ jobs:
       - name: Save build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: build-artifact-${{ runner.os }}
+          name: build-archive-${{ runner.os }}
           path: build-archive-${{ runner.os }}.tar.gz
           retention-days: 3
           overwrite: true
