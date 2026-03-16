@@ -61,9 +61,34 @@ jobs:
           ninja: true
           conan: true
 
+      - name: Map runner configuration to profile
+        id: os
+        run: |
+          case ${{ runner.os }} in
+            "Windows") echo "OS=windows" >> $GITHUB_ENV;;
+            "macOS") echo "OS=macos" >> $GITHUB_ENV;;
+            "Linux") echo "OS=linux" >> $GITHUB_ENV;;
+          esac
+          
+          case ${{ runner.arch }} in
+            "X64") echo "ARCH=x86_64" >> $GITHUB_ENV;;
+            "ARM64") echo "ARCH=arm64" >> $GITHUB_ENV;;
+          esac
+
+      - name: Find conan profile
+        run: |
+          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != "true" ]]; then
+            echo "CONAN_INSTALL_PROFILE=${{ env.OS }}-${{ env.ARCH }}-debug" >> $GITHUB_ENV
+          else
+            echo "CONAN_INSTALL_PROFILE=${{ env.OS }}-${{ env.ARCH }}-static" >> $GITHUB_ENV
+          fi
+
+      - name: Install project dependencies
+        run: conan install . --build=missing --profile:all=./profiles/${{ env.CONAN_INSTALL_PROFILE }}
+
       - name: Setup conan configuration
         run: |
-          if [[ "${{ github.ref }}" != "refs/heads/master" ]]; then
+          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != "true" ]]; then
             if [[ "${{ runner.os }}" != "Windows" ]]; then
               echo "CONAN_CONFIG_PRESET=conan-debug" >> $GITHUB_ENV
             else
@@ -79,27 +104,6 @@ jobs:
             echo "CONAN_BUILD_PRESET=conan-release" >> $GITHUB_ENV
           fi
 
-      - name: Map runner configuration to profile
-        id: os
-        run: |
-          case ${{ runner.os }} in
-            "Windows") echo "OS=windows" >> $GITHUB_ENV;;
-            "macOS") echo "OS=macos" >> $GITHUB_ENV;;
-            "Linux") echo "OS=linux" >> $GITHUB_ENV;;
-          esac
-          
-          case ${{ runner.arch }} in
-            "X64") echo "ARCH=x86_64" >> $GITHUB_ENV;;
-            "ARM64") echo "ARCH=arm64" >> $GITHUB_ENV;;
-          esac
-
-      - name: Install project dependencies
-        run: |
-          if [[ "${{ github.ref }}" != "refs/heads/master" ]]; then
-            conan install . --build=missing -s:a build_type=Debug -s:a compiler.cppstd=23
-          else
-            conan install . --build=missing --profile:all=./profiles/${{ env.OS }}-${{ env.ARCH }}-static
-          fi
 
       - name: Build project
         run: |
@@ -171,7 +175,7 @@ jobs:
 
       - name: Find conan generated test preset
         run: |
-          if [[ "${{ github.ref }}" != "refs/heads/master" ]]; then
+          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != 'true' ]]; then
             echo "CONAN_TEST_PRESET=conan-debug" >> $GITHUB_ENV
           else
             echo "CONAN_TEST_PRESET=conan-release" >> $GITHUB_ENV
@@ -228,7 +232,7 @@ jobs:
     permissions:
       contents: write
     needs: [ archive ]
-    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Clone repository
         uses: actions/checkout@v6
@@ -240,34 +244,9 @@ jobs:
         with:
           name: release-archives
 
-      - name: Detect version bump
-        id: bump
-        run: |
-          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
-          VERSION=${LAST_TAG#v}
-          MAJOR=$(echo $VERSION | cut -d. -f1)
-          MINOR=$(echo $VERSION | cut -d. -f2)
-          PATCH=$(echo $VERSION | cut -d. -f3)
-          
-          COMMIT_MSG=$(git log -1 --pretty=%B)
-          
-          if echo "$COMMIT_MSG" | grep -qi "major"; then
-            MAJOR=$((MAJOR + 1))
-            MINOR=0
-            PATCH=0
-          elif echo "$COMMIT_MSG" | grep -qi "feature"; then
-            MINOR=$((MINOR + 1))
-            PATCH=0
-          else
-            PATCH=$((PATCH + 1))
-          fi
-          
-          NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          echo "new_version=${NEW_VERSION}" >> $GITHUB_OUTPUT
-
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.bump.outputs.new_version }}
+          tag_name: ${{ github.ref_name }}
           files: ./*.tar.gz
           fail_on_unmatched_files: true
