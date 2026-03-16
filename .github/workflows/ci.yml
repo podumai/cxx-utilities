@@ -108,13 +108,14 @@ jobs:
           path: ${{ env.CONAN_CONFIG_HOME }}
           key: conan-${{ runner.os }}
 
+      - name: Prepare build artifacts for save
+        run: tar -czf build-archive-${{ runner.os }}.tar.gz CMakeUserPresets.json build
+
       - name: Save build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact-${{ runner.os }}
-          path: |
-            build/
-            CMakeUserPresets.json
+          path: build-archive-${{ runner.os }}
           retention-days: 3
           overwrite: true
 
@@ -154,7 +155,10 @@ jobs:
       - name: Restore build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact-${{ runner.os }}
+          name: build-archive-${{ runner.os }}
+
+      - name: Unarchive build artifacts
+        run: tar -xzf build-archive-${{ runner.os }}
 
       - name: Find conan generated test preset
         run: |
