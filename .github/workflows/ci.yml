@@ -102,14 +102,6 @@ jobs:
       - name: Find conan config home
         run: echo "CONAN_CONFIG_HOME=$(conan config home)" >> $GITHUB_ENV
 
-      - name: Generate access key
-        run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != "true" ]]; then
-            echo "CACHE_KEY=conanfile.py" >> $GITHUB_ENV
-          else
-            echo "CACHE_KEY=conanfile.py,profiles/${{ env.OS }}-${{ env.ARCH }}-static" >> $GITHUB_ENV
-          fi
-
       - name: Cache conan packages
         uses: actions/cache@v5
         with:
@@ -149,6 +141,15 @@ jobs:
           conan: true
           cmake: true
           ninja: true
+
+      - name: Find conan config home
+        run: echo "CONAN_CONFIG_HOME=$(conan config hone)" >> $GITHUB_ENV
+
+      - name: Restore conan2 cache
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ env.CONAN_CONFIG_HOME }}
+          key: conan-${{ runner.os }}
 
       - name: Restore build artifacts
         uses: actions/download-artifact@v4
