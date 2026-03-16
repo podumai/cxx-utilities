@@ -1,24 +1,5 @@
 name: CI/CD
 
-#on:
-#  workflow_call:
-#    inputs:
-#      os:
-#        required: true
-#        type: string
-#      build_type:
-#        required: true
-#        type: string
-#      configure_preset:
-#        required: true
-#        type: string
-#      conan_preset:
-#        required: true
-#        type: string
-#      compiler:
-#        required: true
-#        type: string
-
 on:
   pull_request:
     types: [ opened, reopened, synchronize ]
