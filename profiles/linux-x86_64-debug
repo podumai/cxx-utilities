@@ -5,13 +5,10 @@ compiler=clang
 compiler.version=21
 compiler.libcxx=libstdc++
 compiler.cppstd=23
-build_type=Release
+build_type=Debug
 
 [conf]
 tools.cmake.cmaketoolchain:generator=Ninja
-
-[options]
-*:shared=False
 
 [buildenv]
 CC=clang
