@@ -4,6 +4,8 @@ on:
   pull_request:
     types: [ opened, reopened, synchronize ]
     branches: [ master ]
+    paths-ignore:
+      - .github/**
   push:
     tags: [ 'v*.*.*' ]
 
@@ -13,7 +15,7 @@ env:
 jobs:
   config:
     runs-on: ubuntu-24.04
-    permissions: {}
+    permissions: { }
     outputs:
       macos-image: ${{ steps.constants.outputs.macos-image }}
       apple-clang-compiler: ${{ steps.constants.outputs.apple-clang-compiler }}
@@ -33,8 +35,6 @@ jobs:
     permissions:
       contents: read
     needs: [ config ]
-    outputs:
-      os: ${{ steps.os.outputs.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -115,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: build-artifact-${{ runner.os }}
-          path: build-archive-${{ runner.os }}
+          path: build-archive-${{ runner.os }}.tar.gz
           retention-days: 3
           overwrite: true
 
