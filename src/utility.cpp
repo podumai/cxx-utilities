@@ -13,10 +13,8 @@
  */
 namespace lab::utility {
 
-/**
- * @brief Enumeration represents the byte indexes in ip address parsed as tuple.
- * @enum BytePosition
- */
+/// @brief Enumeration represents the byte indexes in ip address parsed as tuple.
+/// @enum BytePosition
 enum BytePosition : unsigned char { kUnknown = 0, kFirst = 0, kSecond = 1, kThird = 2, kFourth = 3 };
 
 /// @brief Parses row as columns separeted by tab.
