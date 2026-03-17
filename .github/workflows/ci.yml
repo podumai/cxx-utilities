@@ -158,7 +158,7 @@ jobs:
           name: build-archive-${{ runner.os }}
 
       - name: Unarchive build artifacts
-        run: tar -xzf build-archive-${{ runner.os }}
+        run: tar -xzf build-archive-${{ runner.os }}.tar.gz
 
       - name: Find conan generated test preset
         run: |
