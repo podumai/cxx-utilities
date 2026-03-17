@@ -84,6 +84,10 @@ enum struct FilterArgs : unsigned char {
   kTask3 = 46
 };
 
+/// @brief Displays ip addresses to stdout.
+/// @param[in] ip_addresses Vector of parsed ip addresses.
+/// @return None.
+/// @throws std::bad_alloc (if allocation fails).
 auto Task1(const std::vector<ParsedIpType>& ip_addresses) -> void {
   std::println("[Task-1] Sorted range:");
   DisplayRange(ip_addresses);
