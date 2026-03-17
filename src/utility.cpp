@@ -59,6 +59,11 @@ enum BytePosition : unsigned char { kUnknown = 0, kFirst = 0, kSecond = 1, kThir
 
 inline namespace __details {
 
+/// @internal
+/// @brief Prints the range to stdout.
+/// @param[in] range Range to display.
+/// @return None
+/// @throws std::bad_alloc (if allocation fails).
 auto DisplayRange(std::ranges::range auto&& range) -> void {
   std::size_t i{};
   for (auto const& value : std::forward<decltype(range)>(range)) {
