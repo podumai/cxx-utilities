@@ -19,6 +19,10 @@ namespace lab::utility {
  */
 enum BytePosition : unsigned char { kUnknown = 0, kFirst = 0, kSecond = 1, kThird = 2, kFourth = 3 };
 
+/// @brief Parses row as columns separeted by tab.
+/// @param[in] row String representation of row following tsv format.
+/// @return Parsed row in contigious container if row is valid, nullopt otherwise.
+/// @throws std::bad_alloc (if allocation fails).
 [[nodiscard]] auto ParseRow(std::string_view row) -> std::optional<std::vector<std::string_view>> {
   if (row.empty()) [[unlikely]] {
     return std::nullopt;
