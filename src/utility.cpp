@@ -7,10 +7,8 @@
 #include <tpu/utility.hpp>
 #include <utility>
 
-/**
- * @namespace lab::utility
- * @brief Namespace containing utility function for laboratory work
- */
+/// @namespace lab::utility
+/// @brief Namespace containing utility function for laboratory work
 namespace lab::utility {
 
 /// @brief Enumeration represents the byte indexes in ip address parsed as tuple.
