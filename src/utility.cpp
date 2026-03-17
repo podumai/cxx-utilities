@@ -74,6 +74,8 @@ auto DisplayRange(std::ranges::range auto&& range) -> void {
 
 }  // namespace __details
 
+/// @brief Enumeration representing filter arguments required by tasks.
+/// @enum FilterArgs
 enum struct FilterArgs : unsigned char {
   kUnknown = 0,
   kTask1 = 1,
