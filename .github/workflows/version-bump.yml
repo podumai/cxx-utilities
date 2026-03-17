@@ -75,3 +75,5 @@ jobs:
           git commit -m "chore: bump version"
           git tag "v${{ env.NEW_VERSION }}"
           git push origin master --follow-tags
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
