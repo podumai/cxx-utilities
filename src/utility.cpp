@@ -93,6 +93,10 @@ auto Task1(const std::vector<ParsedIpType>& ip_addresses) -> void {
   DisplayRange(ip_addresses);
 }
 
+/// @brief Displays sorted ip addresses to stdout.
+/// @param[in] ip_addresses Vector of parsed ip addresses.
+/// @return None.
+/// @throws std::bad_alloc (if allocation fails).
 auto Task2(const std::vector<ParsedIpType>& ip_addresses) -> void {
   auto filtered_range = ip_addresses | std::views::filter([] [[nodiscard]] (const auto& ip_address) noexcept -> bool {
                           return std::get<BytePosition::kFirst>(ip_address) == std::to_underlying(FilterArgs::kTask1);
