@@ -80,7 +80,7 @@ jobs:
 
       - name: Find conan profile
         run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != "true" ]]; then
+          if [[ "${{ version.inputs }}" == "" ]]; then
             echo "CONAN_INSTALL_PROFILE=${{ env.OS }}-${{ env.ARCH }}-debug" >> $GITHUB_ENV
           else
             echo "CONAN_INSTALL_PROFILE=${{ env.OS }}-${{ env.ARCH }}-static" >> $GITHUB_ENV
@@ -91,7 +91,7 @@ jobs:
 
       - name: Setup conan configuration
         run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != "true" ]]; then
+          if [[ "${{ inputs.version }}" == "" ]]; then
             echo "CONAN_CONFIG_PRESET=conan-debug" >> $GITHUB_ENV
             echo "CONAN_BUILD_PRESET=conan-debug" >> $GITHUB_ENV
           else
@@ -101,7 +101,7 @@ jobs:
 
       - name: Build project
         run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != "true" ]]; then
+          if [[ "${{ inputs.version }}" == "" ]]; then
             cmake --preset ${{ env.CONAN_CONFIG_PRESET }}
             cmake --build --preset ${{ env.CONAN_BUILD_PRESET }}
           else
@@ -172,7 +172,7 @@ jobs:
 
       - name: Find conan generated test preset
         run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != 'true' ]]; then
+          if [[ "${{ inputs.version }}" == "" ]]; then
             echo "CONAN_TEST_PRESET=conan-debug" >> $GITHUB_ENV
           else
             echo "CONAN_TEST_PRESET=conan-release" >> $GITHUB_ENV
