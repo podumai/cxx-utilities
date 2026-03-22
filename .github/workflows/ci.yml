@@ -95,7 +95,7 @@ jobs:
             echo "CONAN_CONFIG_PRESET=conan-debug" >> $GITHUB_ENV
             echo "CONAN_BUILD_PRESET=conan-debug" >> $GITHUB_ENV
           else
-            echo "CONAN_CONFIG_PRESET=conan-release" >> $GITNUB_ENV
+            echo "CONAN_CONFIG_PRESET=conan-release" >> $GITHUB_ENV
             echo "CONAN_BUILD_PRESET=conan-release" >> $GITHUB_ENV
           fi
 
