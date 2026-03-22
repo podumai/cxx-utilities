@@ -1,4 +1,5 @@
 /// Laboratory work for C++ course
+/// @data 23-03-2026
 /// @copyright Apache 2.0 License
 /// @author Kirill Morozov kirillsm05@gmail.com
 
