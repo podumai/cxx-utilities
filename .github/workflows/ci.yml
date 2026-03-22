@@ -80,7 +80,7 @@ jobs:
 
       - name: Find conan profile
         run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != "true" ]]; then
+          if [[ "${{ inputs.version }}" == "" ]]; then
             echo "CONAN_INSTALL_PROFILE=${{ env.OS }}-${{ env.ARCH }}-debug" >> $GITHUB_ENV
           else
             echo "CONAN_INSTALL_PROFILE=${{ env.OS }}-${{ env.ARCH }}-static" >> $GITHUB_ENV
@@ -91,23 +91,22 @@ jobs:
 
       - name: Setup conan configuration
         run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != "true" ]]; then
+          if [[ "${{ inputs.version }}" == "" ]]; then
             echo "CONAN_CONFIG_PRESET=conan-debug" >> $GITHUB_ENV
             echo "CONAN_BUILD_PRESET=conan-debug" >> $GITHUB_ENV
           else
-            echo "CONAN_CONFIG_PRESET=conan-release" >> $GITNUB_ENV
+            echo "CONAN_CONFIG_PRESET=conan-release" >> $GITHUB_ENV
             echo "CONAN_BUILD_PRESET=conan-release" >> $GITHUB_ENV
           fi
 
       - name: Build project
         run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != "true" ]]; then
+          if [[ "${{ inputs.version }}" == "" ]]; then
             cmake --preset ${{ env.CONAN_CONFIG_PRESET }}
-            cmake --build --preset ${{ env.CONAN_BUILD_PRESET }}
           else
             cmake --preset ${{ env.CONAN_CONFIG_PRESET }} -DCI_CD_RELEASE=ON
-            cmake --build --preset ${{ env.CONAN_BUILD_PRESET }} --target App
           fi
+          cmake --build --preset ${{ env.CONAN_BUILD_PRESET }}
 
       - name: Find conan config home
         run: echo "CONAN_CONFIG_HOME=$(conan config home)" >> $GITHUB_ENV
@@ -172,7 +171,7 @@ jobs:
 
       - name: Find conan generated test preset
         run: |
-          if [[ "${{ startsWith(github.ref, 'refs/tags/') }}" != 'true' ]]; then
+          if [[ "${{ inputs.version }}" == "" ]]; then
             echo "CONAN_TEST_PRESET=conan-debug" >> $GITHUB_ENV
           else
             echo "CONAN_TEST_PRESET=conan-release" >> $GITHUB_ENV
@@ -200,6 +199,12 @@ jobs:
         with:
           name: build-archive-Linux
           path: Linux
+
+      - name: Unarchive build artifacts (macOS)
+        run: tar -xzf macOS/build-archive-macOS.tar.gz -C macOS
+
+      - name: Unarchive build artifacts (Linux)
+        run: tar -xzf Linux/build-archive-Linux.tar.gz -C Linux
 
       - name: Make archive release executable (macOS)
         run: tar -czf macos-arm64.tar.gz -C ./macOS/build/Release/bin .
