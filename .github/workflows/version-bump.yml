@@ -76,4 +76,3 @@ jobs:
           git commit -m "chore: bump version"
           git tag "v${{ env.NEW_VERSION }}"
           git push origin master --follow-tags
-          git push "https://x-access-token:${APP_TOKEN}@github.com/${{ github.repository }}.git" master --follow-tags
