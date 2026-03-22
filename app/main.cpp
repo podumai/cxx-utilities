@@ -1,3 +1,5 @@
+/// Laboratory work for C++ course
+
 #include <algorithm>
 #include <exception>
 #include <fstream>
