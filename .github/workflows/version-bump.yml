@@ -82,7 +82,8 @@ jobs:
   trigger-release:
     needs: [ version-bump ]
     permissions:
-      contents: read
+      contents: write
+      actions: write
     uses: ./.github/workflows/ci.yml
     with:
       version: ${{ needs.version-bump.outputs.new-version }}
