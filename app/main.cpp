@@ -1,5 +1,6 @@
 /// Laboratory work for C++ course
 /// @copyright Apache 2.0 License
+/// @author Kirill Morozov kirillsm05@gmail.com
 
 #include <algorithm>
 #include <exception>
