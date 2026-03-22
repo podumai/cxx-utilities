@@ -1,4 +1,5 @@
 /// Laboratory work for C++ course
+///
 /// @file app/main.cpp
 /// @data 23-03-2026
 /// @copyright Apache 2.0 License
