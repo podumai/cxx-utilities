@@ -192,13 +192,13 @@ jobs:
       - name: Download build artifacts (macOS)
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact-macOS
+          name: build-archive-macOS
           path: macOS
 
       - name: Download build artifacts (Linux)
         uses: actions/download-artifact@v4
         with:
-          name: build-artifact-Linux
+          name: build-archive-Linux
           path: Linux
 
       - name: Make archive release executable (macOS)
