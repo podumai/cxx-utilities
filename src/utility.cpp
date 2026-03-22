@@ -57,6 +57,9 @@ enum BytePosition : unsigned char { kUnknown = 0, kFirst = 0, kSecond = 1, kThir
   return parsed_ip_address;
 }
 
+/// @internal
+/// @brief Namespace containing implementation details.
+/// @namespace __details
 inline namespace __details {
 
 /// @internal
