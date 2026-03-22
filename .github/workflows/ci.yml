@@ -186,7 +186,7 @@ jobs:
       contents: read
       actions: write
     needs: [ test ]
-    if: always() && needs.test.result == 'success' && inputs.version != ''
+    if: inputs.version != ''
     steps:
       - name: Download build artifacts (macOS)
         uses: actions/download-artifact@v4
