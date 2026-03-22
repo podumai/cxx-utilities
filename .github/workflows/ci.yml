@@ -80,7 +80,7 @@ jobs:
 
       - name: Find conan profile
         run: |
-          if [[ "${{ version.inputs }}" == "" ]]; then
+          if [[ "${{ inputs.version }}" == "" ]]; then
             echo "CONAN_INSTALL_PROFILE=${{ env.OS }}-${{ env.ARCH }}-debug" >> $GITHUB_ENV
           else
             echo "CONAN_INSTALL_PROFILE=${{ env.OS }}-${{ env.ARCH }}-static" >> $GITHUB_ENV
