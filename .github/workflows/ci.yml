@@ -103,11 +103,10 @@ jobs:
         run: |
           if [[ "${{ inputs.version }}" == "" ]]; then
             cmake --preset ${{ env.CONAN_CONFIG_PRESET }}
-            cmake --build --preset ${{ env.CONAN_BUILD_PRESET }}
           else
             cmake --preset ${{ env.CONAN_CONFIG_PRESET }} -DCI_CD_RELEASE=ON
-            cmake --build --preset ${{ env.CONAN_BUILD_PRESET }} --target App
           fi
+          cmake --build --preset ${{ env.CONAN_BUILD_PRESET }}
 
       - name: Find conan config home
         run: echo "CONAN_CONFIG_HOME=$(conan config home)" >> $GITHUB_ENV
