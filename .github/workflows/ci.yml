@@ -200,6 +200,12 @@ jobs:
           name: build-archive-Linux
           path: Linux
 
+      - name: Unarchive build artifacts (macOS)
+        run: tar -xzf macOS/build-archive-macOS.tar.gz -C macOS
+
+      - name: Unarchive build artifacts (Linux)
+        run: tar -xzf Linux/build-archive-Linux.tar.gz -C Linux
+
       - name: Make archive release executable (macOS)
         run: tar -czf macos-arm64.tar.gz -C ./macOS/build/Release/bin .
 
