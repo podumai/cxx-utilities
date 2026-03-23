@@ -75,16 +75,3 @@ jobs:
           git add VERSION
           git commit -m "chore: bump version"
           git push origin master
-
-      - name: Save new version
-        run: echo "new-version=${NEW_VERSION}" >> $GITHUB_OUTPUT
-
-  trigger-release:
-    needs: [ version-bump ]
-    permissions:
-      contents: write
-      actions: write
-    uses: ./.github/workflows/ci.yml
-    with:
-      version: ${{ needs.version-bump.outputs.new-version }}
-    secrets: inherit
