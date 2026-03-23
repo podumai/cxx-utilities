@@ -1,3 +1,4 @@
+/// Laboratory work for C++ course
 /// Utility file contains required task functions to complete tasks.
 ///
 /// @file src/utility.cpp
