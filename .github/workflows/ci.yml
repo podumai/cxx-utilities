@@ -7,14 +7,7 @@ on:
     paths-ignore: [ .github/** ]
   push:
     branches: [ master ]
-    paths-ignore: [ .github/** ]
     paths: [ VERSION ]
-  workflow_call:
-    inputs:
-      version:
-        type: string
-        required: true
-        description: Version used for generating release
   workflow_dispatch:
     inputs:
       version:
@@ -83,7 +76,7 @@ jobs:
 
       - name: Find conan profile
         run: |
-          if [[ "${{ inputs.version }}" == "" ]]; then
+          if [[ "${{ inputs.version }}" == "" ]] && [ "${{ github.event_name }}" != "push" ]; then
             echo "CONAN_INSTALL_PROFILE=${{ env.OS }}-${{ env.ARCH }}-debug" >> $GITHUB_ENV
           else
             echo "CONAN_INSTALL_PROFILE=${{ env.OS }}-${{ env.ARCH }}-static" >> $GITHUB_ENV
@@ -94,7 +87,7 @@ jobs:
 
       - name: Setup conan configuration
         run: |
-          if [[ "${{ inputs.version }}" == "" ]]; then
+          if [[ "${{ inputs.version }}" == "" ]] && [ "${{ github.event_name }}" != "push" ]; then
             echo "CONAN_CONFIG_PRESET=conan-debug" >> $GITHUB_ENV
             echo "CONAN_BUILD_PRESET=conan-debug" >> $GITHUB_ENV
           else
@@ -104,7 +97,7 @@ jobs:
 
       - name: Build project
         run: |
-          if [[ "${{ inputs.version }}" == "" ]]; then
+          if [[ "${{ inputs.version }}" == "" ]] && [ "${{ github.event_name }}" != "push" ]; then
             cmake --preset ${{ env.CONAN_CONFIG_PRESET }}
           else
             cmake --preset ${{ env.CONAN_CONFIG_PRESET }} -DCI_CD_RELEASE=ON
@@ -174,7 +167,7 @@ jobs:
 
       - name: Find conan generated test preset
         run: |
-          if [[ "${{ inputs.version }}" == "" ]]; then
+          if [[ "${{ inputs.version }}" == "" ]] && [ "${{ github.event_name }}" == "push" ]; then
             echo "CONAN_TEST_PRESET=conan-debug" >> $GITHUB_ENV
           else
             echo "CONAN_TEST_PRESET=conan-release" >> $GITHUB_ENV
@@ -200,7 +193,7 @@ jobs:
       contents: read
       actions: write
     needs: [ propagate-version ]
-    if: needs.propagate-version.outputs.version != ''
+    if: needs.propagate-version.outputs.version != '' || github.event_name == 'push'
     steps:
       - name: Download build artifacts (macOS)
         uses: actions/download-artifact@v4
