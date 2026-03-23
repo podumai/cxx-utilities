@@ -188,9 +188,9 @@ jobs:
         id: set-version
         run: |
           if [ "${{ github.event_name }}" == "push" ]; then
-            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
-          else
             echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+          else
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
           fi
 
   archive:
