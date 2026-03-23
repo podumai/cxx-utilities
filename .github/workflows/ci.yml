@@ -167,7 +167,7 @@ jobs:
 
       - name: Find conan generated test preset
         run: |
-          if [[ "${{ inputs.version }}" == "" ]] && [ "${{ github.event_name }}" == "push" ]; then
+          if [[ "${{ inputs.version }}" == "" ]] && [ "${{ github.event_name }}" != "push" ]; then
             echo "CONAN_TEST_PRESET=conan-debug" >> $GITHUB_ENV
           else
             echo "CONAN_TEST_PRESET=conan-release" >> $GITHUB_ENV
