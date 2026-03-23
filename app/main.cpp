@@ -1,4 +1,7 @@
 /// Laboratory work for C++ course
+/// It contains several tasks that parses given tsv file into vector of ip addresses,
+/// sorts them accordingly to current task and prints the result based on used predicate
+/// to filter the range.
 ///
 /// @file app/main.cpp
 /// @data 23-03-2026
