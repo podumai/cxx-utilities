@@ -176,7 +176,7 @@ jobs:
       - name: Run unit-tests
         run: ctest --preset ${{ env.CONAN_TEST_PRESET }}
 
-  propagate-version:
+  propagate-release-version:
     runs-on: ubuntu-24.04
     needs: [ test ]
     permissions: { }
@@ -198,7 +198,7 @@ jobs:
     permissions:
       contents: read
       actions: write
-    needs: [ propagate-version ]
+    needs: [ propagate-release-version ]
     steps:
       - name: Download build artifacts (macOS)
         uses: actions/download-artifact@v4
@@ -236,7 +236,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-    needs: [ archive ]
+    needs: [ propagate-release-version, archive ]
     steps:
       - name: Clone repository
         uses: actions/checkout@v6
@@ -251,7 +251,7 @@ jobs:
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ inputs.version }}
-          name: Release v${{ inputs.version }}
+          tag_name: v${{ needs.propagate-version.outputs.version }}
+          name: Release v${{ needs.propagate-version.outputs.version }}
           files: ./*.tar.gz
           fail_on_unmatched_files: true
