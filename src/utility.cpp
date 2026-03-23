@@ -144,6 +144,9 @@ auto Task4(const std::vector<ParsedIpType>& ip_addresses) -> void {
 
 namespace std {
 
+/// @brief Full template specialization for `std::formatter`.
+/// @class formatter
+/// @details Full template specialization for `std::formatter` class to be used in `std::print` function.
 template<>
 struct formatter<lab::ParsedIpType, char> : public formatter<std::string> {
   [[nodiscard]] auto format(const lab::ParsedIpType& ip_address, std::format_context& context) const {
