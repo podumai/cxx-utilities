@@ -180,12 +180,18 @@ jobs:
     runs-on: ubuntu-24.04
     needs: [ test ]
     permissions: { }
+    if: inputs.version != '' || github.event_name == 'push'
     outputs:
       version: ${{ steps.set-version.outputs.version }}
     steps:
       - name: Set version output
         id: set-version
-        run: echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+          fi
 
   archive:
     runs-on: ubuntu-24.04
@@ -193,7 +199,6 @@ jobs:
       contents: read
       actions: write
     needs: [ propagate-version ]
-    if: needs.propagate-version.outputs.version != '' || github.event_name == 'push'
     steps:
       - name: Download build artifacts (macOS)
         uses: actions/download-artifact@v4
