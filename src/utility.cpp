@@ -1,3 +1,5 @@
+/// Utility file contains required task functions to complete tasks.
+///
 /// @file src/utility.cpp
 /// @date 23-03-2026
 /// @copyright Apache 2.0 License
