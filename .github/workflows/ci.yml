@@ -187,7 +187,7 @@ jobs:
       - name: Set version output
         id: set-version
         run: |
-          if [ "${{ github.event_name }}" == "push" ]; then
+          if [ "${{ github.event_name }}" != "push" ]; then
             echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
           else
             echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
