@@ -184,6 +184,12 @@ jobs:
     outputs:
       version: ${{ steps.set-version.outputs.version }}
     steps:
+      - name: Clone repository
+        if: github.event_name == 'push'
+        uses: actions/checkout@v6
+        with:
+          ref: master
+
       - name: Set version output
         id: set-version
         run: |
