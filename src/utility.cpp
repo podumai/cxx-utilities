@@ -1,5 +1,6 @@
 /// @file src/utility.cpp
 /// @date 23-03-2026
+/// @author Kirill Morozov kirillsm05@gmail.com
 
 #include <algorithm>
 #include <cstdio>
