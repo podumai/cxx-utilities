@@ -150,6 +150,8 @@ auto Task4(const std::vector<ParsedIpType>& ip_addresses) -> void {
 
 }  // namespace lab::utility
 
+/// @internal
+/// @namespace std
 namespace std {
 
 /// @brief Full template specialization for `std::formatter`.
