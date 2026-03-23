@@ -188,6 +188,7 @@ jobs:
       version: ${{ steps.set-version.outputs.version }}
     steps:
       - name: Set version output
+        id: set-version
         run: echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
 
   archive:
